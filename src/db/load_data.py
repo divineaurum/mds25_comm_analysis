@@ -7,8 +7,8 @@ import pandas as pd
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent.parent
-CSV_PATH = ROOT / "data" / "processed" / "comments_anonymized.csv"
-DB_PATH = ROOT / "data" / "processed" / "comments.db"
+CSV_PATH = ROOT / "data" / "processed" / "comments_anonymized_full.csv"
+DB_PATH = ROOT / "data" / "processed" / "comments_full.db"
 
 
 def load_data(csv_path: Path = CSV_PATH, db_path: Path = DB_PATH):
