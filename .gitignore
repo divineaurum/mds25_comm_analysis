@@ -1,0 +1,19 @@
+# Черновые файлы разработки
+draft/
+
+# Сырые данные и их обработка
+data/raw/
+ipynb_notebooks/process_data.ipynb
+
+# ChromaDB (создается вызовом populate_rag.py)
+data/chroma_db*/
+
+# Виртуальное окружение
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/

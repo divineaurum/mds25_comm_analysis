@@ -1,10 +1,82 @@
-# mds25_comm_analysis
+# Анализ тем в пользовательских комментариях
 
-Название работы: Подходы к автоматическому выявлению основных тем в пользовательских комментариях для анализа клиентского опыта
-Project name: Approaches to automatic identification of main topics in user comments for customer experience analysis
+Сервис автоматически выделяет темы из открытых текстовых комментариев клиентов:
+кластеризация (BERTopic) -> разметка тем через LLM+RAG -> вывод в веб-интерфейсе.
 
-ФИО студента: Исаев Дмитрий Юрьевич
-ФИО научного руководителя: Армен Левонович Бекларян
+**Название работы:** Подходы к автоматическому выявлению основных тем в пользовательских комментариях для анализа клиентского опыта
+
+**Project name:** Approaches to automatic identification of main topics in user comments for customer experience analysis
+
+**ФИО студента:** Исаев Дмитрий Юрьевич
+
+**ФИО научного руководителя:** Армен Левонович Бекларян
+
+---
+
+## Стек
+
+| Компонент | Технология |
+|-----------|-----------|
+| Кластеризация | BERTopic + intfloat/multilingual-e5-large |
+| LLM | Ollama + Qwen2.5-7B-Instruct |
+| Векторная БД | ChromaDB |
+| Хранение данных | SQLite |
+| Бэкенд | FastAPI |
+| Фронтенд | HTML + JS + CSS |
+
+## Быстрый старт
+
+**Требования:** Python 3.11, [Ollama](https://ollama.com/), GPU 8 GB VRAM (для LLM).
+
+```bash
+# 1. Создать и активировать виртуальное окружение
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate   # Linux/Mac
+
+# 2. Установить зависимости
+pip install -r requirements.txt
+
+# 3. Скачать LLM и запустить Ollama (если ещё не запущен)
+ollama pull qwen2.5:7b-instruct-q4_K_M
+# ollama serve   # если не запускается автоматически
+
+# 4. Инициализировать ChromaDB из RAG-документов (первый запуск скачивает модель эмбеддингов ~1 GB)
+python src/llm/populate_rag.py
+
+# 5. Запустить сервис
+uvicorn src.api.main:app --reload
+```
+
+Открыть фронтенд в браузере: `http://localhost:8000`
+
+Swagger UI для работы с эндпойнтами: `http://localhost:8000/docs`
+
+## Структура репозитория
+
+```
+├── src/
+│   ├── pipeline.py             # Запуск всего пайплайна
+│   ├── db/                     # Загрузка данных и запросы к SQLite
+│   ├── clustering/             # Кластеризация BERTopic
+│   ├── llm/                    # Ollama, RAG, разметка кластеров
+│   └── api/                    # FastAPI
+├── frontend/                   # Сайт
+├── rag_docs/                   # RAG-документы: описания продуктов и известные категории жалоб
+├── data/processed/             # БД SQLite (10710 комментариев для 5 продуктов)
+├── results/                    # JSON с результатами анализа
+└── ipynb_notebooks/            # Jupyter-эксперименты (эмбеддинги, LLM, RAG)
+```
+
+## UI сервиса
+
+![Форма анализа](docs/example%201.png)
+
+![Результаты](docs/example%202.png)
+
+---
+
+## Сроки работы
 
 - Обзор источников: 12.01
 - Формирование основного датасета с комментариями. Планирование RAG. Формирование документов RAG. 12.01-12.02
