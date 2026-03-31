@@ -1,0 +1,34 @@
+# Версия Python - 3.11.8
+
+# Обработка данных
+pandas
+nltk
+
+# Эмбеддинги и кластеризация
+sentence-transformers
+bertopic
+hdbscan
+umap-learn
+numpy
+
+# Метрики и baseline
+scikit-learn
+gensim
+
+# Работа с Ollama
+requests
+
+# RAG
+chromadb
+
+# Бэкенд с FastAPI
+fastapi
+uvicorn[standard]
+pydantic
+
+# Работа в Jupyter-ноутбуках
+jupyter
+ipywidgets
+
+# PyTorch (нужно, если будет запуск на GPU с CUDA=12.8 - запустить до requirements.txt)
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
