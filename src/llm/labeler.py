@@ -106,12 +106,14 @@ def label_cluster(
     prompt = build_prompt(info, categories_str, rag_context)
     total_elapsed = 0.0
     total_tokens = 0
+    total_prompt_tokens = 0
     last_raw = ""
 
     for attempt in range(1, max_retries + 2):
         result = call_ollama(prompt, system_prompt=SYS_PROMPT)
         total_elapsed += result["elapsed"]
         total_tokens += result["tokens"]
+        total_prompt_tokens += result["prompt_tokens"]
         last_raw = result["content"]
 
         parsed = parse_json_response(last_raw)
@@ -123,6 +125,7 @@ def label_cluster(
                 "raw": last_raw,
                 "elapsed": round(total_elapsed, 2),
                 "tokens": total_tokens,
+                "prompt_tokens": total_prompt_tokens,
                 "valid_json": True,
                 "attempts": attempt,
             }
@@ -135,6 +138,7 @@ def label_cluster(
         "raw": last_raw,
         "elapsed": round(total_elapsed, 2),
         "tokens": total_tokens,
+        "prompt_tokens": total_prompt_tokens,
         "valid_json": False,
         "attempts": max_retries + 1,
     }

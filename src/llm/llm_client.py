@@ -15,6 +15,16 @@ GENERATION_CONFIG = {
 }
 
 
+def get_vram_mb() -> int | None:
+    try:
+        r = requests.get(f"{OLLAMA_BASE_URL}/api/ps", timeout=5)
+        models = r.json().get("models", [])
+        if models:
+            return models[0].get("size_vram", 0) // (1024 * 1024)
+    except Exception:
+        return None
+
+
 def call_ollama(
     user_message: str,
     system_prompt: str | None = None,
@@ -45,4 +55,5 @@ def call_ollama(
         "content": data["message"]["content"],
         "elapsed": round(time.time() - t0, 2),
         "tokens": data.get("eval_count", 0),
+        "prompt_tokens": data.get("prompt_eval_count", 0),
     }

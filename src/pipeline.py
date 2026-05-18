@@ -30,6 +30,7 @@ def run_pipeline(product: str, date_from: str, date_to: str) -> dict:
     from src.clustering.bertopic_pipeline import cluster
     from src.llm.rag_retriever import get_collection, retrieve_context
     from src.llm.labeler import build_cluster_info, label_cluster
+    from src.llm.llm_client import get_vram_mb
 
     product_id = PRODUCT_TO_ID.get(product)
     if product_id is None:
@@ -73,8 +74,13 @@ def run_pipeline(product: str, date_from: str, date_to: str) -> dict:
 
     # 3. Инициализация RAG-коллекции (один раз)
     collection = get_collection()
+    vram_mb = get_vram_mb()
 
     # 4. Разметка каждого кластера через LLM + RAG
+    total_elapsed = 0.0
+    total_tokens_out = 0
+    total_tokens_in = 0
+    skipped = 0
     topics = []
     for topic_id in unique_topics:
         cluster_texts = clustered_df[clustered_df["topic"] == topic_id]["text"].tolist()
@@ -84,9 +90,14 @@ def run_pipeline(product: str, date_from: str, date_to: str) -> dict:
         info = build_cluster_info(cluster_texts, topic_id, keywords, product)
         result = label_cluster(info, rag["categories_str"], rag["rag_context"])
 
+        total_elapsed += result["elapsed"]
+        total_tokens_out += result["tokens"]
+        total_tokens_in += result["prompt_tokens"]
+
         if not result["valid_json"]:
-            print(f"  [!] Кластер {topic_id}: невалидный JSON — пропущен")
-            print(f"      Сырой ответ: {result['raw'][:120]}...")
+            print(f"Кластер {topic_id}: невалидный JSON - пропущен")
+            print(f"Полученный ответ: {result['raw'][:120]}...")
+            skipped += 1
             continue
 
         parsed = result["parsed"]
@@ -116,6 +127,14 @@ def run_pipeline(product: str, date_from: str, date_to: str) -> dict:
         "period": f"{date_from} — {date_to}",
         "total_comments": len(df),
         "topics": sorted(topics, key=lambda t: t["count"], reverse=True),
+        "meta": {
+            "vram_mb": vram_mb,
+            "total_elapsed_sec": round(total_elapsed, 2),
+            "total_tokens_out": total_tokens_out,
+            "total_tokens_in": total_tokens_in,
+            "clusters_labeled": len(topics),
+            "clusters_skipped": skipped,
+        },
     }
 
     results_dir = ROOT / "results"
