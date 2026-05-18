@@ -89,29 +89,52 @@ def label_cluster(
     info: dict,
     categories_str: str,
     rag_context: str,
+    max_retries: int = 2,
 ) -> dict:
     """
-    Вызывает LLM для разметки кластера
+    Вызывает LLM для разметки кластера.  Повторяет запрос
+    до max_retries раз при невалидном JSON.
 
     Возвращает dict:
         parsed - распарсенный JSON (или None при ошибке парсинга)
         raw - сырой текст ответа модели
-        elapsed - время генерации (сек)
-        tokens - кол-во токенов
+        elapsed - общее время генерации (сек)
+        tokens - общее количество токенов
         valid_json - True, если парсинг успешен
+        attempts - сколько попыток было сделано
     """
     prompt = build_prompt(info, categories_str, rag_context)
-    result = call_ollama(prompt, system_prompt=SYS_PROMPT)
-    parsed = parse_json_response(result["content"])
+    total_elapsed = 0.0
+    total_tokens = 0
+    last_raw = ""
 
-    if parsed:
-        cat = (parsed.get("existing_category") or "").lower()
-        parsed["is_new_topic"] = "новая тема" in cat or "new_topic" in cat
+    for attempt in range(1, max_retries + 2):
+        result = call_ollama(prompt, system_prompt=SYS_PROMPT)
+        total_elapsed += result["elapsed"]
+        total_tokens += result["tokens"]
+        last_raw = result["content"]
+
+        parsed = parse_json_response(last_raw)
+        if parsed is not None:
+            cat = (parsed.get("existing_category") or "").lower()
+            parsed["is_new_topic"] = "новая тема" in cat or "new_topic" in cat
+            return {
+                "parsed": parsed,
+                "raw": last_raw,
+                "elapsed": round(total_elapsed, 2),
+                "tokens": total_tokens,
+                "valid_json": True,
+                "attempts": attempt,
+            }
+
+        if attempt <= max_retries:
+            print(f"ОШИБКА: невалидный JSON, перезапуск ({attempt}/{max_retries})")
 
     return {
-        "parsed": parsed,
-        "raw": result["content"],
-        "elapsed": result["elapsed"],
-        "tokens": result["tokens"],
-        "valid_json": parsed is not None,
+        "parsed": None,
+        "raw": last_raw,
+        "elapsed": round(total_elapsed, 2),
+        "tokens": total_tokens,
+        "valid_json": False,
+        "attempts": max_retries + 1,
     }
